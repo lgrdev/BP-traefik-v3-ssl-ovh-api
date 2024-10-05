@@ -1,0 +1,106 @@
+## Global Settings
+global: 
+  checkNewVersion: false
+  sendAnonymousUsage: false
+
+#############################################################
+## Ping Settings
+ping:
+  entryPoint: ping
+
+#############################################################
+## API Settings
+api:
+  dashboard: true
+  debug: false
+  insecure: true
+
+#############################################################
+## Logs Settings
+log:
+  level: INFO
+  format: json
+  filepath: /logs/traefik.log
+accesslog:
+  format: json
+  filePath: /logs/access.log
+
+#############################################################
+## Provider Settings
+providers:
+  providersThrottleDuration: 30s
+  docker:
+    endpoint: "unix:///var/run/docker.sock"
+    exposedByDefault: false
+    network: traefik_proxy
+    watch: true
+  file:
+    filename: /etc/traefik/dynamic.yaml
+    watch: true
+
+#############################################################
+## Entrypoints Settings
+entryPoints:
+  #############################################################
+  # WEB
+  web:
+    address: ":80"
+    http:
+      redirections:
+        entrypoint:
+          to: websecure
+          scheme: https
+          permanent: true
+  websecure:
+    address: ":443"
+  #############################################################
+  # MAIL
+  mail-smtp:
+    address: ":25"
+  mail-submission:
+    address: ":587"
+  mail-submissions:
+    address: ":465"
+  mail-imap:
+    address: ":143"
+  mail-imaps:
+    address: ":993"
+  mail-pop3:
+    address: ":110"
+  mail-pop3s:
+    address: ":995"
+  mail-managesieve:
+    address: ":4190"
+  ping:
+    address: ":8082"
+  #############################################################
+  # DATABASES
+  db-postgres:
+    address: ":5432/tcp"
+  db-mariadb:
+    address: ":3306/tcp"
+  db-oracle:
+    address: ":1521/tcp"
+  db-redis:
+    address: ":6379/tcp"
+  db-hfsql28:
+    address: ":4928/tcp"
+  db-hfsql29:
+    address: ":4929/tcp" 
+
+#############################################################
+## Let's Encrypt Certificate Settings
+## becareful, acme email must be set in the environment variables (.env file)
+certificatesResolvers:
+  lets-encrypt:
+    acme:
+      dnschallenge:
+        provider: "ovh"
+      storage: "letsencrypt/acme.json"
+
+
+
+
+
+
+

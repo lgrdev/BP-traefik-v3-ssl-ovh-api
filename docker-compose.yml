@@ -1,0 +1,86 @@
+networks:
+  traefik_proxy:
+    name: traefik_proxy
+    driver: bridge
+
+secrets:
+  ovh_endpoint:
+    file: './secrets/ovh_endpoint.secret'
+  ovh_application_key:
+    file: './secrets/ovh_application_key.secret'
+  ovh_application_secret:
+    file: './secrets/ovh_application_secret.secret'
+  ovh_consumer_key:
+    file: './secrets/ovh_consumer_key.secret'
+
+services:
+  traefik:
+    image: traefik:v3.1.5
+    container_name: 'traefik'
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true    
+    ports:
+      - '443:443'
+      - '80:80'
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro        # It's not recommended mounting the docker socket into a container -> see https://github.com/wollomatic/traefik2-hardened
+      - ./config/traefik.yaml:/etc/traefik/traefik.yaml:ro  # static traefik configuration
+      - ./config/dynamic.yaml:/etc/traefik/dynamic.yaml:ro  # dynamic traefik configuration
+      - ./letsencrypt:/letsencrypt
+      - ./.htpasswd:/.htpasswd
+      - ./logs/:/logs/
+    secrets:
+      - "ovh_endpoint"
+      - "ovh_application_key"
+      - "ovh_application_secret"
+      - "ovh_consumer_key"
+    environment:
+      - TRAEFIK_CERTIFICATESRESOLVERS_lets-encrypt_ACME_EMAIL=${ACME_EMAIL}
+      - "OVH_ENDPOINT_FILE=/run/secrets/ovh_endpoint"
+      - "OVH_APPLICATION_KEY_FILE=/run/secrets/ovh_application_key"
+      - "OVH_APPLICATION_SECRET_FILE=/run/secrets/ovh_application_secret"
+      - "OVH_CONSUMER_KEY_FILE=/run/secrets/ovh_consumer_key"
+      - 'TZ=Europe/Paris'
+    networks:
+      - traefik_proxy
+    labels:
+      - 'traefik.enable=true'
+      - 'traefik.docker.network=traefik_proxy'
+      - 'traefik.http.routers.traefik.entrypoints=websecure'
+# uncomment the following line to enable basic auth      
+#      - "traefik.http.middlewares.traefik.basicauth.usersfile=.htpasswd/users"
+# comment the following line to disable white list by IP
+      - 'traefik.http.routers.traefik.middlewares=webSecureByIp@file'
+      - 'traefik.http.routers.traefik.rule=Host(`traefik.${ACME_DOMAIN_NAME}`)'
+      - 'traefik.http.routers.traefik.service=api@internal'
+      - 'traefik.http.routers.traefik.tls.certresolver=lets-encrypt'
+      - 'traefik.http.routers.traefik.tls.options=mintls12@file'
+    healthcheck:
+      test: 'wget --quiet --spider http://localhost:8082/ping || exit 1'
+      interval: '30s'
+      timeout: '3s'
+      start_period: '5s'
+      retries: 3
+
+
+  whoami:
+    image: 'traefik/whoami'
+    container_name: traefik-whoami
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true        
+    depends_on:
+      - traefik
+    networks:
+      - traefik_proxy
+    labels:
+      - 'traefik.enable=true'
+      - 'traefik.docker.network=traefik_proxy'
+      - 'traefik.http.routers.whoami.entrypoints=websecure'
+      - 'traefik.http.routers.whoami.middlewares=webSecureByIp@file'
+      - 'traefik.http.routers.whoami.rule=Host(`whoami.${ACME_DOMAIN_NAME}`)'
+      - 'traefik.http.routers.whoami.tls.certresolver=lets-encrypt'
+      - 'traefik.http.routers.whoami.tls.options=mintls12@file'
+
+
