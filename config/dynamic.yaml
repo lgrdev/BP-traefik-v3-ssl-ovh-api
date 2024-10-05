@@ -71,13 +71,12 @@ http:
     webSecureByIp:
       ipAllowList:
         sourceRange:
-          - 82.66.56.51
+          - 127.0.0.1
 
     webSecureByIpLarge:
       ipAllowList:
         sourceRange:
-          - 82.66.56.51
-          - 88.176.150.74
+          - 127.0.0.1
 
 ## TLS 1.2 / TLS 1.3
 tls:
@@ -106,5 +105,4 @@ tcp:
     tcpSecureByIp:
       ipAllowList:
         sourceRange:
-          - 82.66.56.51
-          - 88.176.150.74
+          - 127.0.0.1

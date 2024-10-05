@@ -8,7 +8,7 @@ Voici la structure des fichiers et dossiers du projet :
 
 ```
 .
-├── htpassword/            # Contient les fichiers d'authentification pour sécuriser l'accès
+├── .htpasswd/             # Contient les fichiers d'authentification pour sécuriser l'accès
 ├── config/                # Fichiers de configuration de Traefik
 │   ├── traefik.yaml       # Configuration statique de Traefik
 │   └── dynamic.yaml       # Configuration dynamique (middlewares, routers, etc.)
@@ -19,7 +19,7 @@ Voici la structure des fichiers et dossiers du projet :
 
 ### Contenu des répertoires
 
-- **`htpassword/`** : Ce répertoire contient les fichiers d'authentification générés par `htpasswd`, qui sont utilisés pour sécuriser l'accès à certaines routes dans Traefik (par exemple, l'accès au tableau de bord ou à des services sensibles).
+- **`.htpasswd/`** : Ce répertoire contient les fichiers d'authentification générés par `htpasswd`, qui sont utilisés pour sécuriser l'accès à certaines routes dans Traefik (par exemple, l'accès au tableau de bord ou à des services sensibles).
   
 - **`config/`** :
   - `traefik.yaml` : Fichier de configuration statique de Traefik où sont définies les options de base (API, points d'entrée, certificats SSL, etc.).
@@ -132,7 +132,23 @@ tcp:
 
 ## modification du docker-compose.yaml
 
+Par défaut, le dashboard traefik est sécurisé via une liste blanche d'IP.
+en commantant et décommentant les lignes dans le docker-compose.yaml, il est possible de passer en basic auth.
 
+```yaml
+    labels:
+      - 'traefik.enable=true'
+      - 'traefik.docker.network=traefik_proxy'
+      - 'traefik.http.routers.traefik.entrypoints=websecure'
+# uncomment the following line to enable basic auth      
+#      - "traefik.http.middlewares.traefik.basicauth.usersfile=.htpasswd/users"
+# comment the following line to disable white list by IP
+      - 'traefik.http.routers.traefik.middlewares=webSecureByIp@file'
+      - 'traefik.http.routers.traefik.rule=Host(`traefik.${ACME_DOMAIN_NAME}`)'
+      - 'traefik.http.routers.traefik.service=api@internal'
+      - 'traefik.http.routers.traefik.tls.certresolver=lets-encrypt'
+      - 'traefik.http.routers.traefik.tls.options=mintls12@file'
+```
 
 ## Déploiement
 
